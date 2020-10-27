@@ -868,6 +868,7 @@ namespace UnityEditor.VFX.Test
                 case VFXValueType.Texture3D: return vfx.HasTexture(name) && vfx.GetTextureDimension(name) == TextureDimension.Tex3D;
                 case VFXValueType.TextureCube: return vfx.HasTexture(name) && vfx.GetTextureDimension(name) == TextureDimension.Cube;
                 case VFXValueType.TextureCubeArray: return vfx.HasTexture(name) && vfx.GetTextureDimension(name) == TextureDimension.CubeArray;
+                case VFXValueType.CameraBuffer: return vfx.HasTexture(name);
                 case VFXValueType.Boolean: return vfx.HasBool(name);
                 case VFXValueType.Matrix4x4: return vfx.HasMatrix4x4(name);
             }
@@ -892,6 +893,7 @@ namespace UnityEditor.VFX.Test
                 case VFXValueType.Texture3D:
                 case VFXValueType.TextureCube:
                 case VFXValueType.TextureCubeArray: return vfx.GetTexture(name);
+                case VFXValueType.CameraBuffer: return vfx.GetTexture(name);
                 case VFXValueType.Boolean: return vfx.GetBool(name);
                 case VFXValueType.Matrix4x4: return vfx.GetMatrix4x4(name);
             }
@@ -916,6 +918,7 @@ namespace UnityEditor.VFX.Test
                 case VFXValueType.Texture3D:
                 case VFXValueType.TextureCube:
                 case VFXValueType.TextureCubeArray: vfx.SetTexture(name, (Texture)value); break;
+                case VFXValueType.CameraBuffer: vfx.SetTexture(name, (Texture)value); break;
                 case VFXValueType.Boolean: vfx.SetBool(name, (bool)value); break;
                 case VFXValueType.Matrix4x4: vfx.SetMatrix4x4(name, (Matrix4x4)value); break;
             }
@@ -1035,6 +1038,7 @@ namespace UnityEditor.VFX.Test
                                 case VFXValueType.Texture3D:
                                 case VFXValueType.TextureCube:
                                 case VFXValueType.TextureCubeArray: return property.objectReferenceValue;
+                                case VFXValueType.CameraBuffer: return property.objectReferenceValue;
                                 case VFXValueType.Boolean: return property.boolValue;
                                 case VFXValueType.Matrix4x4: return fnMatrixFromSerializedProperty(property);
                             }
@@ -1087,6 +1091,7 @@ namespace UnityEditor.VFX.Test
                                 case VFXValueType.Texture3D:
                                 case VFXValueType.TextureCube:
                                 case VFXValueType.TextureCubeArray: propertyValue.objectReferenceValue = (UnityEngine.Object)value; break;
+                                case VFXValueType.CameraBuffer: propertyValue.objectReferenceValue = (UnityEngine.Object)value; break;
                                 case VFXValueType.Boolean: propertyValue.boolValue = (bool)value; break;
                                 case VFXValueType.Matrix4x4: fnMatrixToSerializedProperty(propertyValue, (Matrix4x4)value); break;
                             }
@@ -1118,6 +1123,7 @@ namespace UnityEditor.VFX.Test
             VFXValueType.Texture3D,
             VFXValueType.TextureCube,
             VFXValueType.TextureCubeArray,
+            VFXValueType.CameraBuffer,
             VFXValueType.Boolean,
             VFXValueType.Matrix4x4
         };
