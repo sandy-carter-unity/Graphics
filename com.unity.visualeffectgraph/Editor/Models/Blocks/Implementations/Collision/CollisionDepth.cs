@@ -100,7 +100,7 @@ float2 aProjPos = abs(projPos.xy);
 if (aProjPos.x < 1.0f && aProjPos.y < 1.0f) // visible on screen
 {
     float2 uv = projPos.xy * 0.5f + 0.5f;
-    float depth = LOAD_TEXTURE2D_X(Camera_depthBuffer.t, uvs*Camera_pixelDimensions).r;
+    float depth = LOAD_TEXTURE2D_X(Camera_depthBuffer.t, uv*Camera_pixelDimensions).r;
     #if UNITY_REVERSED_Z
     depth = 1.0f - depth; // reversed z
     #endif
