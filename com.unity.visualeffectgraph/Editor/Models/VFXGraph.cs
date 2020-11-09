@@ -13,6 +13,8 @@ using UnityEngine.Profiling;
 
 
 using UnityObject = UnityEngine.Object;
+using UnityEditor.Graphs;
+using UnityEditor.VFX.Operator;
 
 namespace UnityEditor.VFX
 {
@@ -360,6 +362,11 @@ namespace UnityEditor.VFX
             var objs = new HashSet<ScriptableObject>();
             CollectDependencies(objs);
 
+            //if (version < 6)
+            {
+                SanitizeCameraBuffers(objs);
+            }
+
             foreach (var model in objs.OfType<VFXModel>())
                 try
                 {
@@ -399,7 +406,7 @@ namespace UnityEditor.VFX
                         GradientColorKey[] keys = value.colorKeys;
 
                         for (int i = 0; i < keys.Length; ++i)
-                        {
+                        {c
                             var colorKey = keys[i];
                             colorKey.color = colorKey.color.linear;
                             keys[i] = colorKey;
@@ -423,6 +430,51 @@ namespace UnityEditor.VFX
 #endif
 
             UpdateSubAssets(); //Should not be necessary : force remove no more referenced object from asset
+        }
+
+        private void SanitizeCameraBuffers(HashSet<ScriptableObject> objs)
+        {
+            List<Tuple<int, string, int, string>> links = new List<Tuple<int, string, int, string>>();
+            var cameraSlots = objs.Where(obj => obj is VFXSlot && (obj as VFXSlot).value is CameraType).ToArray();
+            for (int i = 0; i < cameraSlots.Length; ++i)
+            {
+                var cameraSlot = cameraSlots[i] as VFXSlot;
+
+                var depthBufferSlot = cameraSlot.children.First(slot => slot.name == "depthBuffer");
+                SanitizeCameraBufferLinks(depthBufferSlot, i, cameraSlots, links);
+
+                var colorBufferSlot = cameraSlot.children.First(slot => slot.name == "colorBuffer");
+                SanitizeCameraBufferLinks(colorBufferSlot, i, cameraSlots, links);
+
+                objs.Remove(cameraSlots[i]);
+                cameraSlots[i] = cameraSlot.Recreate();
+                objs.Add(cameraSlots[i]);
+            }
+            foreach (var link in links)
+            {
+                var cameraSlotFrom = cameraSlots[link.Item1] as VFXSlot;
+                var slotFrom = cameraSlotFrom.children.First(slot => slot.name == link.Item2);
+
+                var cameraSlotTo = cameraSlots[link.Item3] as VFXSlot;
+                var slotTo = cameraSlotTo.children.First(slot => slot.name == link.Item4);
+
+                slotFrom.Link(slotTo);
+            }
+        }
+
+        private void SanitizeCameraBufferLinks(VFXSlot slotFrom, int indexFrom, ScriptableObject[] cameraSlots, List<Tuple<int, string, int, string>> links)
+        {
+            if (slotFrom != null && !(slotFrom is VFXSlotCameraBuffer))
+            {
+                foreach (var slotTo in slotFrom.LinkedSlots)
+                {
+                    int indexTo = Array.IndexOf(cameraSlots, slotTo.GetMasterSlot());
+                    if (indexTo >= 0)
+                    {
+                        links.Add(new Tuple<int, string, int, string>(indexFrom, slotFrom.name, indexTo, slotTo.name));
+                    }
+                }
+            }
         }
 
         public void ClearCompileData()
