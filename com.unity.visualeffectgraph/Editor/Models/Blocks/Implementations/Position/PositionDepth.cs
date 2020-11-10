@@ -224,7 +224,7 @@ float4 vfxPos = mul(ClipToVFX,clipPos);
                 if (inheritSceneColor)
                 {
                     source += "\n";
-                    source += VFXBlockUtility.GetComposeString(compositionColor, "color", " LoadTexture(Camera_colorBuffer,int4(uvs*Camera_pixelDimensions, 0, 0)).rgb", "blendColor");
+                    source += VFXBlockUtility.GetComposeString(compositionColor, "color", " LOAD_TEXTURE2D_X(Camera_colorBuffer.t, uvs*Camera_pixelDimensions).rgb", "blendColor");
                 }
 
                 return source;

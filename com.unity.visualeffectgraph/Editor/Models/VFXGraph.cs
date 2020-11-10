@@ -406,7 +406,7 @@ namespace UnityEditor.VFX
                         GradientColorKey[] keys = value.colorKeys;
 
                         for (int i = 0; i < keys.Length; ++i)
-                        {c
+                        {
                             var colorKey = keys[i];
                             colorKey.color = colorKey.color.linear;
                             keys[i] = colorKey;

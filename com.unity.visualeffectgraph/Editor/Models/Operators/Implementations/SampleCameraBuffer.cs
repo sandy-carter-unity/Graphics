@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 
 namespace UnityEditor.VFX.Operator
@@ -12,6 +11,8 @@ namespace UnityEditor.VFX.Operator
         {
             [Tooltip("Sets the camera buffer to sample from.")]
             public CameraBuffer cameraBuffer = null;
+            [Tooltip("Sets the camera pixel dimensions.")]
+            public Vector2 pixelDimensions = Vector2.one;
             [Tooltip("Sets the texture coordinate used for the sampling.")]
             public Vector2 UV = Vector2.zero;
         }
@@ -24,7 +25,7 @@ namespace UnityEditor.VFX.Operator
 
         protected override sealed VFXExpression[] BuildExpression(VFXExpression[] inputExpression)
         {
-            return new[] { new VFXExpressionSampleCameraBuffer(inputExpression[0], inputExpression[1]) };
+            return new[] { new VFXExpressionSampleCameraBuffer(inputExpression[0], inputExpression[1], inputExpression[2]) };
         }
     }
 }
