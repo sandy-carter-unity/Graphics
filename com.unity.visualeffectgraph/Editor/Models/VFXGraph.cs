@@ -235,7 +235,8 @@ namespace UnityEditor.VFX
         // 4: TransformVector|Position|Direction & DistanceToSphere|Plane|Line have now spaceable outputs
         // 5: Harmonized position blocks composition: PositionAABox was the only one with Overwrite position
         // 6: Remove automatic strip orientation from quad strip context
-        public static readonly int CurrentVersion = 6;
+        // 7: Add CameraBuffer type
+        public static readonly int CurrentVersion = 7;
 
         public readonly VFXErrorManager errorManager = new VFXErrorManager();
 
@@ -362,7 +363,7 @@ namespace UnityEditor.VFX
             var objs = new HashSet<ScriptableObject>();
             CollectDependencies(objs);
 
-            //if (version < 6)
+            if (version < 7)
             {
                 SanitizeCameraBuffers(objs);
             }
