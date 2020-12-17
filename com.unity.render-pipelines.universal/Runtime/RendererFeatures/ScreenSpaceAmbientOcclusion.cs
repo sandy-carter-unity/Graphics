@@ -120,21 +120,14 @@ namespace UnityEngine.Rendering.Universal
             // Private Variables
             private ScreenSpaceAmbientOcclusionSettings m_CurrentSettings;
             private ProfilingSampler m_ProfilingSampler = ProfilingSampler.Get(URPProfileId.SSAO);
-            private RenderTargetIdentifier m_SSAOTexture1Target = new RenderTargetIdentifier(s_SSAOTexture1ID, 0, CubemapFace.Unknown, -1);
-            private RenderTargetIdentifier m_SSAOTexture2Target = new RenderTargetIdentifier(s_SSAOTexture2ID, 0, CubemapFace.Unknown, -1);
-            private RenderTargetIdentifier m_SSAOTexture3Target = new RenderTargetIdentifier(s_SSAOTexture3ID, 0, CubemapFace.Unknown, -1);
+            private RenderTargetIdentifier m_SSAOTexture1Target = new RenderTargetIdentifier(URPShaderIDs._SSAOTexture1ID, 0, CubemapFace.Unknown, -1);
+            private RenderTargetIdentifier m_SSAOTexture2Target = new RenderTargetIdentifier(URPShaderIDs._SSAOTexture2ID, 0, CubemapFace.Unknown, -1);
+            private RenderTargetIdentifier m_SSAOTexture3Target = new RenderTargetIdentifier(URPShaderIDs._SSAOTexture3ID, 0, CubemapFace.Unknown, -1);
             private RenderTextureDescriptor m_Descriptor;
 
             // Constants
             private const string k_SSAOAmbientOcclusionParamName = "_AmbientOcclusionParam";
             private const string k_SSAOTextureName = "_ScreenSpaceOcclusionTexture";
-
-            // Statics
-            private static readonly int s_BaseMapID = Shader.PropertyToID("_BaseMap");
-            private static readonly int s_SSAOParamsID = Shader.PropertyToID("_SSAOParams");
-            private static readonly int s_SSAOTexture1ID = Shader.PropertyToID("_SSAO_OcclusionTexture1");
-            private static readonly int s_SSAOTexture2ID = Shader.PropertyToID("_SSAO_OcclusionTexture2");
-            private static readonly int s_SSAOTexture3ID = Shader.PropertyToID("_SSAO_OcclusionTexture3");
 
             private enum ShaderPasses
             {
@@ -182,7 +175,7 @@ namespace UnityEngine.Rendering.Universal
                     1.0f / downsampleDivider,      // Downsampling
                     m_CurrentSettings.SampleCount  // Sample count
                 );
-                material.SetVector(s_SSAOParamsID, ssaoParams);
+                material.SetVector(URPShaderIDs._SSAOParamsID, ssaoParams);
 
                 // Update keywords
                 CoreUtils.SetKeyword(material, k_OrthographicCameraKeyword, renderingData.cameraData.camera.orthographic);
@@ -232,15 +225,15 @@ namespace UnityEngine.Rendering.Universal
                 m_Descriptor.width /= downsampleDivider;
                 m_Descriptor.height /= downsampleDivider;
                 m_Descriptor.colorFormat = RenderTextureFormat.ARGB32;
-                cmd.GetTemporaryRT(s_SSAOTexture1ID, m_Descriptor, FilterMode.Bilinear);
+                cmd.GetTemporaryRT(URPShaderIDs._SSAOTexture1ID, m_Descriptor, FilterMode.Bilinear);
 
                 m_Descriptor.width *= downsampleDivider;
                 m_Descriptor.height *= downsampleDivider;
-                cmd.GetTemporaryRT(s_SSAOTexture2ID, m_Descriptor, FilterMode.Bilinear);
-                cmd.GetTemporaryRT(s_SSAOTexture3ID, m_Descriptor, FilterMode.Bilinear);
+                cmd.GetTemporaryRT(URPShaderIDs._SSAOTexture2ID, m_Descriptor, FilterMode.Bilinear);
+                cmd.GetTemporaryRT(URPShaderIDs._SSAOTexture3ID, m_Descriptor, FilterMode.Bilinear);
 
                 // Configure targets and clear color
-                ConfigureTarget(s_SSAOTexture2ID);
+                ConfigureTarget(URPShaderIDs._SSAOTexture2ID);
                 ConfigureClear(ClearFlag.None, Color.white);
             }
 
@@ -291,7 +284,7 @@ namespace UnityEngine.Rendering.Universal
 
             private void RenderAndSetBaseMap(CommandBuffer cmd, RenderTargetIdentifier baseMap, RenderTargetIdentifier target, ShaderPasses pass)
             {
-                cmd.SetGlobalTexture(s_BaseMapID, baseMap);
+                cmd.SetGlobalTexture(URPShaderIDs._BaseMapID, baseMap);
                 Render(cmd, target, pass);
             }
 
@@ -304,9 +297,9 @@ namespace UnityEngine.Rendering.Universal
                 }
 
                 CoreUtils.SetKeyword(cmd, ShaderKeywordStrings.ScreenSpaceOcclusion, false);
-                cmd.ReleaseTemporaryRT(s_SSAOTexture1ID);
-                cmd.ReleaseTemporaryRT(s_SSAOTexture2ID);
-                cmd.ReleaseTemporaryRT(s_SSAOTexture3ID);
+                cmd.ReleaseTemporaryRT(URPShaderIDs._SSAOTexture1ID);
+                cmd.ReleaseTemporaryRT(URPShaderIDs._SSAOTexture2ID);
+                cmd.ReleaseTemporaryRT(URPShaderIDs._SSAOTexture3ID);
             }
         }
     }
