@@ -53,7 +53,7 @@ namespace UnityEngine.Rendering.Universal
                 Vector4 scaleBiasRt = (flipSign < 0.0f)
                     ? new Vector4(flipSign, 1.0f, -1.0f, 1.0f)
                     : new Vector4(flipSign, 0.0f, 1.0f, 1.0f);
-                cmd.SetGlobalVector(ShaderPropertyId.scaleBiasRt, scaleBiasRt);
+                cmd.SetGlobalVector(URPShaderIDs._ScaleBiasRt, scaleBiasRt);
 
                 cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, m_CopyDepthMaterial);
             }

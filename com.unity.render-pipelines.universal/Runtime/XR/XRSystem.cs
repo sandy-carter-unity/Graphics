@@ -374,13 +374,6 @@ namespace UnityEngine.Rendering.Universal
             framePasses.Add(xrPass);
         }
 
-        internal static class XRShaderIDs
-        {
-            public static readonly int _SourceTexArraySlice = Shader.PropertyToID("_SourceTexArraySlice");
-            public static readonly int _SRGBRead            = Shader.PropertyToID("_SRGBRead");
-            public static readonly int _SRGBWrite           = Shader.PropertyToID("_SRGBWrite");
-        }
-
         internal void RenderMirrorView(CommandBuffer cmd, Camera camera)
         {
             // XRTODO : remove this check when the Quest plugin is fixed
@@ -412,13 +405,13 @@ namespace UnityEngine.Rendering.Universal
                             Vector4 scaleBiasRt = new Vector4(blitParam.destRect.width, blitParam.destRect.height, blitParam.destRect.x, blitParam.destRect.y);
 
                             // Eye texture is always gamma corrected, use explicit sRGB read in shader if srcTex formats is not sRGB format. sRGB format will have implicit sRGB read so it is already handled.
-                            mirrorViewMaterialProperty.SetFloat(XRShaderIDs._SRGBRead, (blitParam.srcTex.sRGB) ? 0.0f : 1.0f);
+                            mirrorViewMaterialProperty.SetFloat(URPShaderIDs._SRGBRead, (blitParam.srcTex.sRGB) ? 0.0f : 1.0f);
                             // Perform explicit sRGB write in shader if color space is gamma
-                            mirrorViewMaterialProperty.SetFloat(XRShaderIDs._SRGBWrite, (QualitySettings.activeColorSpace == ColorSpace.Linear) ? 0.0f : 1.0f);
-                            mirrorViewMaterialProperty.SetTexture(ShaderPropertyId.sourceTex, blitParam.srcTex);
-                            mirrorViewMaterialProperty.SetVector(ShaderPropertyId.scaleBias, scaleBias);
-                            mirrorViewMaterialProperty.SetVector(ShaderPropertyId.scaleBiasRt, scaleBiasRt);
-                            mirrorViewMaterialProperty.SetFloat(XRShaderIDs._SourceTexArraySlice, (float)blitParam.srcTexArraySlice);
+                            mirrorViewMaterialProperty.SetFloat(URPShaderIDs._SRGBWrite, (QualitySettings.activeColorSpace == ColorSpace.Linear) ? 0.0f : 1.0f);
+                            mirrorViewMaterialProperty.SetTexture(URPShaderIDs._SourceTex, blitParam.srcTex);
+                            mirrorViewMaterialProperty.SetVector(URPShaderIDs._ScaleBias, scaleBias);
+                            mirrorViewMaterialProperty.SetVector(URPShaderIDs._ScaleBiasRt, scaleBiasRt);
+                            mirrorViewMaterialProperty.SetFloat(URPShaderIDs._SourceTexArraySlice, (float)blitParam.srcTexArraySlice);
 
                             int shaderPass = (blitParam.srcTex.dimension == TextureDimension.Tex2DArray) ? 1 : 0;
                             cmd.DrawProcedural(Matrix4x4.identity, mirrorViewMaterial, shaderPass, MeshTopology.Quads, 4, 1, mirrorViewMaterialProperty);
@@ -450,11 +443,11 @@ namespace UnityEngine.Rendering.Universal
                 scaleBias.w = 1.0f;
             }
 
-            testMirrorViewMaterialProperty.SetVector(ShaderPropertyId.scaleBias, scaleBias);
-            testMirrorViewMaterialProperty.SetVector(ShaderPropertyId.scaleBiasRt, scaleBiasRT);
+            testMirrorViewMaterialProperty.SetVector(URPShaderIDs._ScaleBias, scaleBias);
+            testMirrorViewMaterialProperty.SetVector(URPShaderIDs._ScaleBiasRt, scaleBiasRT);
 
             // Copy result from the second slice
-            testMirrorViewMaterialProperty.SetFloat(XRShaderIDs._SourceTexArraySlice, 1.0f);
+            testMirrorViewMaterialProperty.SetFloat(URPShaderIDs._SourceTexArraySlice, 1.0f);
 
             cmd.DrawProcedural(Matrix4x4.identity, testMirrorViewMaterial, 1, MeshTopology.Quads, 4, 1, testMirrorViewMaterialProperty);
         }
@@ -496,9 +489,9 @@ namespace UnityEngine.Rendering.Universal
                     testRenderTexture = RenderTexture.GetTemporary(rtDesc);
 
                     testMirrorViewMaterial = mirrorViewMaterial;
-                    testMirrorViewMaterialProperty.SetFloat(XRShaderIDs._SRGBRead, (testRenderTexture.sRGB) ? 0.0f : 1.0f);
-                    testMirrorViewMaterialProperty.SetFloat(XRShaderIDs._SRGBWrite, (QualitySettings.activeColorSpace == ColorSpace.Linear) ? 0.0f : 1.0f);
-                    testMirrorViewMaterialProperty.SetTexture(ShaderPropertyId.sourceTex, testRenderTexture);
+                    testMirrorViewMaterialProperty.SetFloat(URPShaderIDs._SRGBRead, (testRenderTexture.sRGB) ? 0.0f : 1.0f);
+                    testMirrorViewMaterialProperty.SetFloat(URPShaderIDs._SRGBWrite, (QualitySettings.activeColorSpace == ColorSpace.Linear) ? 0.0f : 1.0f);
+                    testMirrorViewMaterialProperty.SetTexture(URPShaderIDs._SourceTex, testRenderTexture);
                 }
 
                 var passInfo = new XRPassCreateInfo
