@@ -30,7 +30,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         int m_ShadowCasterCascadesCount;
         bool m_SupportsBoxFilterForShadows;
 
-        RenderTargetHandle m_MainLightShadowmap;
+        RTHandle m_MainLightShadowmap;
         RenderTexture m_MainLightShadowmapTexture;
 
         Matrix4x4[] m_MainLightShadowMatrices;
@@ -60,7 +60,6 @@ namespace UnityEngine.Rendering.Universal.Internal
             MainLightShadowConstantBuffer._ShadowOffset3 = URPShaderIDs._MainLightShadowOffset[3];
             MainLightShadowConstantBuffer._ShadowmapSize = URPShaderIDs._MainLightShadowmapSize;
 
-            m_MainLightShadowmap.Init(URPShaderIDs._MainLightShadowmapTexture);
             m_SupportsBoxFilterForShadows = Application.isMobilePlatform || SystemInfo.graphicsDeviceType == GraphicsDeviceType.Switch;
         }
 
@@ -118,7 +117,8 @@ namespace UnityEngine.Rendering.Universal.Internal
         {
             m_MainLightShadowmapTexture = ShadowUtils.GetTemporaryShadowTexture(m_ShadowmapWidth,
                 m_ShadowmapHeight, k_ShadowmapBufferBits);
-            ConfigureTarget(new RenderTargetIdentifier(m_MainLightShadowmapTexture));
+            m_MainLightShadowmap = RTHandles.Alloc(m_MainLightShadowmapTexture);
+            ConfigureTarget(m_MainLightShadowmap);
             ConfigureClear(ClearFlag.All, Color.black);
         }
 
@@ -138,12 +138,14 @@ namespace UnityEngine.Rendering.Universal.Internal
             {
                 RenderTexture.ReleaseTemporary(m_MainLightShadowmapTexture);
                 m_MainLightShadowmapTexture = null;
+                m_MainLightShadowmap = null;
             }
         }
 
         void Clear()
         {
             m_MainLightShadowmapTexture = null;
+            m_MainLightShadowmap = null;
 
             for (int i = 0; i < m_MainLightShadowMatrices.Length; ++i)
                 m_MainLightShadowMatrices[i] = Matrix4x4.identity;
@@ -215,7 +217,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             float invHalfShadowAtlasWidth = 0.5f * invShadowAtlasWidth;
             float invHalfShadowAtlasHeight = 0.5f * invShadowAtlasHeight;
 
-            cmd.SetGlobalTexture(m_MainLightShadowmap.id, m_MainLightShadowmapTexture);
+            cmd.SetGlobalTexture(URPShaderIDs._MainLightShadowmapTexture, m_MainLightShadowmap);
             cmd.SetGlobalMatrixArray(MainLightShadowConstantBuffer._WorldToShadow, m_MainLightShadowMatrices);
             ShadowUtils.SetupShadowReceiverConstantBuffer(cmd, m_MainLightShadowParams);
 

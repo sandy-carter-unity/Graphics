@@ -51,7 +51,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         bool m_UseStructuredBuffer;
 
         const int k_ShadowmapBufferBits = 16;
-        private RenderTargetHandle m_AdditionalLightsShadowmap;
+        private RTHandle m_AdditionalLightsShadowmap;
         RenderTexture m_AdditionalLightsShadowmapTexture;
 
         int m_ShadowmapWidth;
@@ -100,7 +100,6 @@ namespace UnityEngine.Rendering.Universal.Internal
             AdditionalShadowsConstantBuffer._AdditionalShadowOffset2 = URPShaderIDs._AdditionalShadowOffset[2];
             AdditionalShadowsConstantBuffer._AdditionalShadowOffset3 = URPShaderIDs._AdditionalShadowOffset[3];
             AdditionalShadowsConstantBuffer._AdditionalShadowmapSize = URPShaderIDs._AdditionalShadowmapSize;
-            m_AdditionalLightsShadowmap.Init(URPShaderIDs._AdditionalLightsShadowmapTexture);
 
             m_AdditionalLightsWorldToShadow_SSBO = URPShaderIDs._AdditionalLightsWorldToShadow_SSBO;
             m_AdditionalShadowParams_SSBO = URPShaderIDs._AdditionalShadowParams_SSBO;
@@ -789,8 +788,8 @@ namespace UnityEngine.Rendering.Universal.Internal
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
-            m_AdditionalLightsShadowmapTexture = ShadowUtils.GetTemporaryShadowTexture(m_ShadowmapWidth, m_ShadowmapHeight, k_ShadowmapBufferBits);
-            ConfigureTarget(new RenderTargetIdentifier(m_AdditionalLightsShadowmapTexture));
+            m_AdditionalLightsShadowmap = RTHandles.Alloc(ShadowUtils.GetTemporaryShadowTexture(m_ShadowmapWidth, m_ShadowmapHeight, k_ShadowmapBufferBits));
+            ConfigureTarget(m_AdditionalLightsShadowmap);
             ConfigureClear(ClearFlag.All, Color.black);
         }
 
@@ -810,6 +809,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             {
                 RenderTexture.ReleaseTemporary(m_AdditionalLightsShadowmapTexture);
                 m_AdditionalLightsShadowmapTexture = null;
+                m_AdditionalLightsShadowmap = null;
             }
         }
 
@@ -828,6 +828,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             m_ShadowSliceToAdditionalLightIndex.Clear();
             m_GlobalShadowSliceIndexToPerLightShadowSliceIndex.Clear();
             m_AdditionalLightsShadowmapTexture = null;
+            m_AdditionalLightsShadowmap = null;
         }
 
         void RenderAdditionalShadowmapAtlas(ref ScriptableRenderContext context, ref CullingResults cullResults, ref LightData lightData, ref ShadowData shadowData)
@@ -899,7 +900,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             float invHalfShadowAtlasWidth = 0.5f * invShadowAtlasWidth;
             float invHalfShadowAtlasHeight = 0.5f * invShadowAtlasHeight;
 
-            cmd.SetGlobalTexture(m_AdditionalLightsShadowmap.id, m_AdditionalLightsShadowmapTexture);
+            cmd.SetGlobalTexture(URPShaderIDs._AdditionalLightsShadowmapTexture, m_AdditionalLightsShadowmap);
 
             // set shadow fade (shadow distance) parameters
             ShadowUtils.SetupShadowReceiverConstantBuffer(cmd, m_MainLightShadowParams);
