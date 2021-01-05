@@ -603,17 +603,11 @@ namespace UnityEngine.Rendering.Universal
         /// <inheritdoc />
         public override void FinishRendering(CommandBuffer cmd)
         {
-            if (m_ActiveCameraColorAttachment != RenderTargetHandle.CameraTarget)
-            {
-                cmd.ReleaseTemporaryRT(m_ActiveCameraColorAttachment.id);
-                m_ActiveCameraColorAttachment = RenderTargetHandle.CameraTarget;
-            }
+            cmd.ReleaseTemporaryRT(m_CameraColorAttachment.id);
+            cmd.ReleaseTemporaryRT(m_CameraDepthAttachment.id);
 
-            if (m_ActiveCameraDepthAttachment != RenderTargetHandle.CameraTarget)
-            {
-                cmd.ReleaseTemporaryRT(m_ActiveCameraDepthAttachment.id);
-                m_ActiveCameraDepthAttachment = RenderTargetHandle.CameraTarget;
-            }
+            m_ActiveCameraColorAttachment = RenderTargetHandle.CameraTarget;
+            m_ActiveCameraDepthAttachment = RenderTargetHandle.CameraTarget;
         }
 
         void EnqueueDeferred(ref RenderingData renderingData, bool hasDepthPrepass, bool applyMainShadow, bool applyAdditionalShadow)
@@ -704,7 +698,7 @@ namespace UnityEngine.Rendering.Universal
                     colorDescriptor.useMipMap = false;
                     colorDescriptor.autoGenerateMips = false;
                     colorDescriptor.depthBufferBits = (useDepthRenderBuffer) ? k_DepthStencilBufferBits : 0;
-                    cmd.GetTemporaryRT(m_ActiveCameraColorAttachment.id, colorDescriptor, FilterMode.Bilinear);
+                    cmd.GetTemporaryRT(m_CameraColorAttachment.id, colorDescriptor, FilterMode.Bilinear);
                 }
 
                 if (createDepth)
@@ -718,7 +712,7 @@ namespace UnityEngine.Rendering.Universal
 #endif
                     depthDescriptor.colorFormat = RenderTextureFormat.Depth;
                     depthDescriptor.depthBufferBits = k_DepthStencilBufferBits;
-                    cmd.GetTemporaryRT(m_ActiveCameraDepthAttachment.id, depthDescriptor, FilterMode.Point);
+                    cmd.GetTemporaryRT(m_CameraDepthAttachment.id, depthDescriptor, FilterMode.Point);
                 }
             }
 
