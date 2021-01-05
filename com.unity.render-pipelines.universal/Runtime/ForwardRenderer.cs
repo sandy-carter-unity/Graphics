@@ -65,13 +65,13 @@ namespace UnityEngine.Rendering.Universal
         RenderTargetHandle m_ActiveCameraDepthAttachment;
         RenderTargetHandle m_CameraColorAttachment;
         RenderTargetHandle m_CameraDepthAttachment;
-        RenderTargetHandle m_DepthTexture;
-        RenderTargetHandle m_NormalsTexture;
+        RTHandle m_DepthTexture;
+        RTHandle m_NormalsTexture;
         RenderTargetHandle[] m_GBufferHandles;
-        RenderTargetHandle m_OpaqueColor;
+        RTHandle m_OpaqueColor;
         // For tiled-deferred shading.
-        RenderTargetHandle m_DepthInfoTexture;
-        RenderTargetHandle m_TileDepthInfoTexture;
+        RTHandle m_DepthInfoTexture;
+        RTHandle m_TileDepthInfoTexture;
 
         ForwardLights m_ForwardLights;
         DeferredLights m_DeferredLights;
@@ -191,8 +191,8 @@ namespace UnityEngine.Rendering.Universal
             // Samples (MSAA) depend on camera and pipeline
             m_CameraColorAttachment.Init(URPShaderIDs._CameraColorTexture);
             m_CameraDepthAttachment.Init(URPShaderIDs._CameraDepthAttachment);
-            m_DepthTexture.Init(URPShaderIDs._CameraDepthTexture);
-            m_NormalsTexture.Init(URPShaderIDs._CameraNormalsTexture);
+            m_DepthTexture = RTHandles.Alloc(URPShaderIDs._CameraDepthTexture);
+            m_NormalsTexture = RTHandles.Alloc(URPShaderIDs._CameraNormalsTexture);
             if (this.renderingMode == RenderingMode.Deferred)
             {
                 m_GBufferHandles = new RenderTargetHandle[(int)DeferredLights.GBufferHandles.Count];
@@ -203,9 +203,9 @@ namespace UnityEngine.Rendering.Universal
                 m_GBufferHandles[(int)DeferredLights.GBufferHandles.Lighting].Init(URPShaderIDs._GBuffer[3]);
                 m_GBufferHandles[(int)DeferredLights.GBufferHandles.ShadowMask].Init(URPShaderIDs._GBuffer[4]);
             }
-            m_OpaqueColor.Init(URPShaderIDs._CameraOpaqueTexture);
-            m_DepthInfoTexture.Init(URPShaderIDs._DepthInfoTexture);
-            m_TileDepthInfoTexture.Init(URPShaderIDs._TileDepthInfoTexture);
+            m_OpaqueColor = RTHandles.Alloc(URPShaderIDs._CameraOpaqueTexture);
+            m_DepthInfoTexture = RTHandles.Alloc(URPShaderIDs._DepthInfoTexture);
+            m_TileDepthInfoTexture = RTHandles.Alloc(URPShaderIDs._TileDepthInfoTexture);
 
             supportedRenderingFeatures = new RenderingFeatures()
             {
@@ -399,12 +399,12 @@ namespace UnityEngine.Rendering.Universal
             {
                 if (renderPassInputs.requiresNormalsTexture)
                 {
-                    m_DepthNormalPrepass.Setup(cameraTargetDescriptor, m_DepthTexture, m_NormalsTexture);
+                    m_DepthNormalPrepass.Setup(cameraTargetDescriptor, new RenderTargetHandle(m_DepthTexture), new RenderTargetHandle(m_NormalsTexture));
                     EnqueuePass(m_DepthNormalPrepass);
                 }
                 else
                 {
-                    m_DepthPrepass.Setup(cameraTargetDescriptor, m_DepthTexture);
+                    m_DepthPrepass.Setup(cameraTargetDescriptor, new RenderTargetHandle(m_DepthTexture));
                     EnqueuePass(m_DepthPrepass);
                 }
             }
@@ -439,14 +439,14 @@ namespace UnityEngine.Rendering.Universal
                 && this.actualRenderingMode != RenderingMode.Deferred;
             if (requiresDepthCopyPass)
             {
-                m_CopyDepthPass.Setup(m_ActiveCameraDepthAttachment, m_DepthTexture);
+                m_CopyDepthPass.Setup(m_ActiveCameraDepthAttachment, new RenderTargetHandle(m_DepthTexture));
                 EnqueuePass(m_CopyDepthPass);
             }
 
             // For Base Cameras: Set the depth texture to the far Z if we do not have a depth prepass or copy depth
             if (cameraData.renderType == CameraRenderType.Base && !requiresDepthPrepass && !requiresDepthCopyPass)
             {
-                Shader.SetGlobalTexture(m_DepthTexture.id, SystemInfo.usesReversedZBuffer ? Texture2D.blackTexture : Texture2D.whiteTexture);
+                Shader.SetGlobalTexture(URPShaderIDs._CameraDepthTexture, SystemInfo.usesReversedZBuffer ? Texture2D.blackTexture : Texture2D.whiteTexture);
             }
 
             if (renderingData.cameraData.requiresOpaqueTexture || renderPassInputs.requiresColorTexture)
@@ -550,7 +550,7 @@ namespace UnityEngine.Rendering.Universal
             {
                 // Scene view camera should always resolve target (not stacked)
                 Assertions.Assert.IsTrue(lastCameraInTheStack, "Editor camera must resolve target upon finish rendering.");
-                m_SceneViewDepthCopyPass.Setup(m_DepthTexture);
+                m_SceneViewDepthCopyPass.Setup(new RenderTargetHandle(m_DepthTexture));
                 EnqueuePass(m_SceneViewDepthCopyPass);
             }
 #endif
@@ -626,9 +626,9 @@ namespace UnityEngine.Rendering.Universal
                 applyAdditionalShadow ? m_AdditionalLightsShadowCasterPass : null,
                 hasDepthPrepass,
                 renderingData.cameraData.renderType == CameraRenderType.Overlay,
-                m_DepthTexture,
-                m_DepthInfoTexture,
-                m_TileDepthInfoTexture,
+                new RenderTargetHandle(m_DepthTexture),
+                new RenderTargetHandle(m_DepthInfoTexture),
+                new RenderTargetHandle(m_TileDepthInfoTexture),
                 m_ActiveCameraDepthAttachment, m_GBufferHandles
             );
 
@@ -639,7 +639,7 @@ namespace UnityEngine.Rendering.Universal
             //Must copy depth for deferred shading: TODO wait for API fix to bind depth texture as read-only resource.
             if (!hasDepthPrepass)
             {
-                m_GBufferCopyDepthPass.Setup(m_CameraDepthAttachment, m_DepthTexture);
+                m_GBufferCopyDepthPass.Setup(m_CameraDepthAttachment, new RenderTargetHandle(m_DepthTexture));
                 EnqueuePass(m_GBufferCopyDepthPass);
             }
 
