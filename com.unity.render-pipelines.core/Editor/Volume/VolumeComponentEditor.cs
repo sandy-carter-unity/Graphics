@@ -76,8 +76,8 @@ namespace UnityEditor.Rendering
     public class VolumeComponentEditor
     {
         static readonly GUIContent k_OverrideSettingText = EditorGUIUtility.TrTextContent("", "Override this setting for this volume.");
-        static readonly GUIContent k_AllText = EditorGUIUtility.TrTextContent("All", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need.");
-        static readonly GUIContent k_NoneText = EditorGUIUtility.TrTextContent("None", "Toggle all overrides off.");
+        static readonly GUIContent k_AllText = EditorGUIUtility.TrTextContent("ALL", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need.");
+        static readonly GUIContent k_NoneText = EditorGUIUtility.TrTextContent("NONE", "Toggle all overrides off.");
 
         /// <summary>
         /// Specifies the <see cref="VolumeComponent"/> this editor is drawing.
@@ -129,9 +129,7 @@ namespace UnityEditor.Rendering
         {
             get
             {
-                if (!m_OverrideToggleSize.HasValue)
-                    m_OverrideToggleSize = CoreEditorStyles.smallTickbox.CalcSize(k_OverrideSettingText);
-
+                m_OverrideToggleSize ??= CoreEditorStyles.smallTickbox.CalcSize(k_OverrideSettingText);
                 return m_OverrideToggleSize.Value;
             }
         }
@@ -301,12 +299,22 @@ namespace UnityEditor.Rendering
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button(k_AllText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
+                if (GUILayout.Toggle(AreAllOverridesTo(true), k_AllText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
                     SetAllOverridesTo(true);
 
-                if (GUILayout.Button(k_NoneText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
+                if (GUILayout.Toggle(AreAllOverridesTo(false), k_NoneText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
                     SetAllOverridesTo(false);
             }
+        }
+
+        internal bool AreAllOverridesTo(bool state)
+        {
+            for (int i = 0; i < target.parameters.Count; ++i)
+            {
+                if (target.parameters[i].overrideState != state)
+                    return false;
+            }
+            return true;
         }
 
         internal void SetAllOverridesTo(bool state)
