@@ -676,9 +676,9 @@ namespace UnityEngine.Rendering.Universal
                 hasDepthPrepass,
                 hasNormalPrepass,
                 renderingData.cameraData.renderType == CameraRenderType.Overlay,
-                depthCopyTexture,
-                new RenderTargetHandle(Shader.PropertyToID(m_DepthInfoTexture.name)),
-                new RenderTargetHandle(Shader.PropertyToID(m_TileDepthInfoTexture.name)),
+                m_DepthTexture,
+                m_DepthInfoTexture,
+                m_TileDepthInfoTexture,
                 m_ActiveCameraDepthAttachment, m_GBufferHandles
             );
 
