@@ -52,7 +52,7 @@ namespace UnityEngine.Rendering.Universal.Internal
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
-            RenderTargetHandle[] gbufferAttachments = m_DeferredLights.GbufferAttachments;
+            RTHandle[] gbufferAttachments = m_DeferredLights.GbufferAttachments;
 
             // Create and declare the render targets used in the pass
             for (int i = 0; i < gbufferAttachments.Length; ++i)
@@ -64,7 +64,14 @@ namespace UnityEngine.Rendering.Universal.Internal
                     gbufferSlice.depthBufferBits = 0; // make sure no depth surface is actually created
                     gbufferSlice.stencilFormat = GraphicsFormat.None;
                     gbufferSlice.graphicsFormat = m_DeferredLights.GetGBufferFormat(i);
-                    cmd.GetTemporaryRT(m_DeferredLights.GbufferAttachments[i].id, gbufferSlice);
+                    if (i == 0)
+                    {
+                        cmd.GetTemporaryRT(URPShaderIDs._CameraOpaqueTexture, gbufferSlice);
+
+                    } else
+                    {
+                        cmd.GetTemporaryRT(URPShaderIDs._GBuffer[i - 1], gbufferSlice);
+                    }
                 }
             }
 
@@ -109,11 +116,14 @@ namespace UnityEngine.Rendering.Universal.Internal
 
         public override void OnCameraCleanup(CommandBuffer cmd)
         {
-            RenderTargetHandle[] gbufferAttachments = m_DeferredLights.GbufferAttachments;
-
-            for (int i = 0; i < gbufferAttachments.Length; ++i)
+            cmd.ReleaseTemporaryRT(URPShaderIDs._CameraOpaqueTexture);
+            for (int i = 1; i < m_DeferredLights.GbufferAttachments.Length; ++i)
+            {
                 if (i != m_DeferredLights.GBufferLightingIndex)
-                    cmd.ReleaseTemporaryRT(gbufferAttachments[i].id);
+                {
+                    cmd.ReleaseTemporaryRT(URPShaderIDs._GBuffer[i - 1]);
+                }
+            }
         }
     }
 }
