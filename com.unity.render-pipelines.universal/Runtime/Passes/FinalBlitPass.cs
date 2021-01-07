@@ -27,7 +27,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// <param name="colorHandle"></param>
         public void Setup(RenderTextureDescriptor baseDescriptor, RTHandle colorHandle)
         {
-            m_Source = RTHandles.Alloc(colorHandle);
+            m_Source = colorHandle;
         }
 
         /// <inheritdoc/>
