@@ -75,6 +75,10 @@ namespace UnityEditor.Rendering
     /// <seealso cref="VolumeComponentEditorAttribute"/>
     public class VolumeComponentEditor
     {
+        static readonly GUIContent k_OverrideSettingText = EditorGUIUtility.TrTextContent("", "Override this setting for this volume.");
+        static readonly GUIContent k_AllText = EditorGUIUtility.TrTextContent("All", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need.");
+        static readonly GUIContent k_NoneText = EditorGUIUtility.TrTextContent("None", "Toggle all overrides off.");
+
         /// <summary>
         /// Specifies the <see cref="VolumeComponent"/> this editor is drawing.
         /// </summary>
@@ -117,6 +121,18 @@ namespace UnityEditor.Rendering
                     m_AdvancedMode.boolValue = value;
                     serializedObject.ApplyModifiedProperties();
                 }
+            }
+        }
+
+        Vector2? m_OverrideToggleSize;
+        internal Vector2 overrideToggleSize
+        {
+            get
+            {
+                if (!m_OverrideToggleSize.HasValue)
+                    m_OverrideToggleSize = CoreEditorStyles.smallTickbox.CalcSize(k_OverrideSettingText);
+
+                return m_OverrideToggleSize.Value;
             }
         }
 
@@ -285,10 +301,10 @@ namespace UnityEditor.Rendering
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Button(EditorGUIUtility.TrTextContent("All", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need."), CoreEditorStyles.miniLabelButton, GUILayout.Width(17f), GUILayout.ExpandWidth(false)))
+                if (GUILayout.Button(k_AllText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
                     SetAllOverridesTo(true);
 
-                if (GUILayout.Button(EditorGUIUtility.TrTextContent("None", "Toggle all overrides off."), CoreEditorStyles.miniLabelButton, GUILayout.Width(32f), GUILayout.ExpandWidth(false)))
+                if (GUILayout.Button(k_NoneText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
                     SetAllOverridesTo(false);
             }
         }
@@ -423,9 +439,14 @@ namespace UnityEditor.Rendering
         /// <param name="property">The property to draw the override checkbox for</param>
         protected void DrawOverrideCheckbox(SerializedDataParameter property)
         {
-            var overrideRect = GUILayoutUtility.GetRect(17f, 17f, GUILayout.ExpandWidth(false));
-            overrideRect.yMin += 4f;
-            property.overrideState.boolValue = GUI.Toggle(overrideRect, property.overrideState.boolValue, EditorGUIUtility.TrTextContent("", "Override this setting for this volume."), CoreEditorStyles.smallTickbox);
+            // Create a rect with the width of the Toggle "ALL" and the height + vspacing of the property that is being overriden
+            float height = EditorGUI.GetPropertyHeight(property.value) + EditorGUIUtility.standardVerticalSpacing;
+            var overrideRect = GUILayoutUtility.GetRect(k_AllText, CoreEditorStyles.miniLabelButton, GUILayout.Height(height), GUILayout.ExpandWidth(false));
+
+            // also center vertically the checkbox
+            overrideRect.yMin += height * 0.5f - overrideToggleSize.y * 0.5f;
+
+            property.overrideState.boolValue = GUI.Toggle(overrideRect, property.overrideState.boolValue, k_OverrideSettingText, CoreEditorStyles.smallTickbox);
         }
     }
 }
