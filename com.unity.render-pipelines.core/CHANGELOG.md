@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Fixed
 - Fixed the default background color for previews to use the original color.
+- Fixed spacing between property fields on the Volume Component Editors.
 
 ### Fixed
 - Fixed ACES tonemaping for Nintendo Switch by forcing some shader color conversion functions to full float precision.
