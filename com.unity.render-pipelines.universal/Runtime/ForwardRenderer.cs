@@ -633,9 +633,9 @@ namespace UnityEngine.Rendering.Universal
                 applyAdditionalShadow ? m_AdditionalLightsShadowCasterPass : null,
                 hasDepthPrepass,
                 renderingData.cameraData.renderType == CameraRenderType.Overlay,
-                new RenderTargetHandle(m_DepthTexture),
-                new RenderTargetHandle(m_DepthInfoTexture),
-                new RenderTargetHandle(m_TileDepthInfoTexture),
+                m_DepthTexture,
+                m_DepthInfoTexture,
+                m_TileDepthInfoTexture,
                 m_ActiveCameraDepthAttachment, m_GBufferHandles
             );
 
