@@ -415,7 +415,7 @@ namespace UnityEngine.Rendering.Universal
                 }
                 else
                 {
-                    m_DepthPrepass.Setup(cameraTargetDescriptor, new RenderTargetHandle(m_DepthTexture));
+                    m_DepthPrepass.Setup(cameraTargetDescriptor, URPShaderIDs._CameraDepthTexture);
                     EnqueuePass(m_DepthPrepass);
                 }
             }

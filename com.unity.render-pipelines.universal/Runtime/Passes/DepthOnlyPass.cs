@@ -12,7 +12,7 @@ namespace UnityEngine.Rendering.Universal.Internal
     {
         int kDepthBufferBits = 32;
 
-        private RenderTargetHandle depthAttachmentHandle { get; set; }
+        private int depthAttachmentId { get; set; }
         internal RenderTextureDescriptor descriptor { get; private set; }
 
         FilteringSettings m_FilteringSettings;
@@ -33,9 +33,9 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// </summary>
         public void Setup(
             RenderTextureDescriptor baseDescriptor,
-            RenderTargetHandle depthAttachmentHandle)
+            int depthAttachmentId)
         {
-            this.depthAttachmentHandle = depthAttachmentHandle;
+            this.depthAttachmentId = depthAttachmentId;
             baseDescriptor.colorFormat = RenderTextureFormat.Depth;
             baseDescriptor.depthBufferBits = kDepthBufferBits;
 
@@ -46,8 +46,8 @@ namespace UnityEngine.Rendering.Universal.Internal
 
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
-            cmd.GetTemporaryRT(depthAttachmentHandle.id, descriptor, FilterMode.Point);
-            ConfigureTarget(new RenderTargetIdentifier(depthAttachmentHandle.Identifier(), 0, CubemapFace.Unknown, -1));
+            cmd.GetTemporaryRT(depthAttachmentId, descriptor, FilterMode.Point);
+            ConfigureTarget(new RenderTargetIdentifier(depthAttachmentId, 0, CubemapFace.Unknown, -1));
             ConfigureClear(ClearFlag.All, Color.black);
         }
 
@@ -78,10 +78,10 @@ namespace UnityEngine.Rendering.Universal.Internal
             if (cmd == null)
                 throw new ArgumentNullException("cmd");
 
-            if (depthAttachmentHandle != RenderTargetHandle.CameraTarget)
+            if (depthAttachmentId != RenderTargetHandle.CameraTarget.id)
             {
-                cmd.ReleaseTemporaryRT(depthAttachmentHandle.id);
-                depthAttachmentHandle = RenderTargetHandle.CameraTarget;
+                cmd.ReleaseTemporaryRT(depthAttachmentId);
+                depthAttachmentId = RenderTargetHandle.CameraTarget.id;
             }
         }
     }
