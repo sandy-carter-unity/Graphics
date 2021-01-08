@@ -289,7 +289,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         // Output lighting result.
         internal RTHandle[] GbufferAttachments { get; set; }
         // Input depth texture, also bound as read-only RT
-        internal RenderTargetHandle DepthAttachment { get; set; }
+        internal RTHandle DepthAttachment { get; set; }
         //
         internal RTHandle DepthCopyTexture { get; set; }
         // Intermediate depth info texture.
@@ -710,7 +710,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             RTHandle depthCopyTexture,
             RTHandle depthInfoTexture,
             RTHandle tileDepthInfoTexture,
-            RenderTargetHandle depthAttachment,
+            RTHandle depthAttachment,
             RTHandle[] gbufferHandles)
         {
             m_AdditionalLightsShadowCasterPass = additionalLightsShadowCasterPass;
@@ -742,7 +742,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                 this.GbufferAttachmentIdentifiers = new RenderTargetIdentifier[this.GbufferAttachments.Length];
             for (int i = 0; i < this.GbufferAttachments.Length; ++i)
                 this.GbufferAttachmentIdentifiers[i] = this.GbufferAttachments[i].nameID;
-            this.DepthAttachmentIdentifier = depthAttachment.Identifier();
+            this.DepthAttachmentIdentifier = depthAttachment;
 
 #if ENABLE_VR && ENABLE_XR_MODULE
             // In XR SinglePassInstance mode, the RTs are texture-array and all slices must be bound.
