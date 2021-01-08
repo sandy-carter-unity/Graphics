@@ -45,9 +45,7 @@ namespace UnityEditor.Rendering.HighDefinition
         SerializedDataParameter m_HighQualityFiltering;
         SerializedDataParameter m_Resolution;
         SerializedDataParameter m_PhysicallyBased;
-
-        public override bool hasAdvancedMode => true;
-
+        
         public override void OnEnable()
         {
             var o = new PropertyFetcher<DepthOfField>(serializedObject);

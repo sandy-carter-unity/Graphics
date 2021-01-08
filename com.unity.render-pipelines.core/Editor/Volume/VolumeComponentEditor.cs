@@ -75,9 +75,22 @@ namespace UnityEditor.Rendering
     /// <seealso cref="VolumeComponentEditorAttribute"/>
     public class VolumeComponentEditor
     {
-        static readonly GUIContent k_OverrideSettingText = EditorGUIUtility.TrTextContent("", "Override this setting for this volume.");
-        static readonly GUIContent k_AllText = EditorGUIUtility.TrTextContent("ALL", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need.");
-        static readonly GUIContent k_NoneText = EditorGUIUtility.TrTextContent("NONE", "Toggle all overrides off.");
+        class Styles
+        {
+            public static GUIContent overrideSettingText { get; } = EditorGUIUtility.TrTextContent("", "Override this setting for this volume.");
+            public static GUIContent allText { get; } = EditorGUIUtility.TrTextContent("ALL", "Toggle all overrides on. To maximize performances you should only toggle overrides that you actually need.");
+            public static GUIContent noneText { get; } = EditorGUIUtility.TrTextContent("NONE", "Toggle all overrides off.");
+        }
+
+        Vector2? m_OverrideToggleSize;
+        internal Vector2 overrideToggleSize
+        {
+            get
+            {
+                m_OverrideToggleSize ??= CoreEditorStyles.smallTickbox.CalcSize(Styles.overrideSettingText);
+                return m_OverrideToggleSize.Value;
+            }
+        }
 
         /// <summary>
         /// Specifies the <see cref="VolumeComponent"/> this editor is drawing.
@@ -103,10 +116,11 @@ namespace UnityEditor.Rendering
 
         SerializedProperty m_AdvancedMode;
 
+        List<VolumeParameter> m_VolumeNotAdditionalParameters;
         /// <summary>
         /// Override this property if your editor makes use of the "More Options" feature.
         /// </summary>
-        public virtual bool hasAdvancedMode => false;
+        public virtual bool hasAdvancedMode => target.parameters.Count != m_VolumeNotAdditionalParameters.Count;
 
         /// <summary>
         /// Checks if the editor currently has the "More Options" feature toggled on.
@@ -123,17 +137,7 @@ namespace UnityEditor.Rendering
                 }
             }
         }
-
-        Vector2? m_OverrideToggleSize;
-        internal Vector2 overrideToggleSize
-        {
-            get
-            {
-                m_OverrideToggleSize ??= CoreEditorStyles.smallTickbox.CalcSize(k_OverrideSettingText);
-                return m_OverrideToggleSize.Value;
-            }
-        }
-
+        
         /// <summary>
         /// A reference to the parent editor in the Inspector.
         /// </summary>
@@ -190,7 +194,16 @@ namespace UnityEditor.Rendering
             serializedObject = new SerializedObject(target);
             activeProperty = serializedObject.FindProperty("active");
             m_AdvancedMode = serializedObject.FindProperty("m_AdvancedMode");
+
+            InitParameters();
+
             OnEnable();
+        }
+
+        void InitParameters()
+        {
+            m_VolumeParameters = new List<VolumeParameter>();
+            VolumeComponent.FindParameters(target, m_VolumeParameters, field => field.GetCustomAttribute<AdditionalAttribute>() == null);
         }
 
         void GetFields(object o, List<(FieldInfo, SerializedProperty)> infos, SerializedProperty prop = null)
@@ -295,15 +308,52 @@ namespace UnityEditor.Rendering
             return target.displayName == "" ? ObjectNames.NicifyVariableName(target.GetType().Name) : target.displayName;
         }
 
+        void AddToogleState(GUIContent content, bool state)
+        {
+            bool allOverridesSameState = AreOverridesTo(state);
+            if (GUILayout.Toggle(allOverridesSameState, content, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)) && !allOverridesSameState)
+                SetOverridesTo(state);
+        }
+
         void TopRowFields()
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                if (GUILayout.Toggle(AreAllOverridesTo(true), k_AllText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
-                    SetAllOverridesTo(true);
+                AddToogleState(Styles.allText, true);
+                AddToogleState(Styles.noneText, false);
+            }
+        }
 
-                if (GUILayout.Toggle(AreAllOverridesTo(false), k_NoneText, CoreEditorStyles.miniLabelButton, GUILayout.ExpandWidth(false)))
-                    SetAllOverridesTo(false);
+        /// <summary>
+        /// Checks if all the visible parameters have the given state
+        /// </summary>
+        /// <param name="state">The state to check</param>
+        internal bool AreOverridesTo(bool state)
+        {
+            if (hasAdvancedMode && isInAdvancedMode)
+                return AreAllOverridesTo(state);
+
+            for (int i = 0; i < m_VolumeParameters.Count; ++i)
+            {
+                if (m_VolumeParameters[i].overrideState != state)
+                    return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Sets the given state to all the visible parameters
+        /// </summary>
+        /// <param name="state">The state to check</param>
+        internal void SetOverridesTo(bool state)
+        {
+            if (hasAdvancedMode && isInAdvancedMode)
+                SetAllOverridesTo(state);
+            else
+            {
+                Undo.RecordObject(target, "Toggle All");
+                target.SetOverridesTo(m_VolumeParameters, state);
+                serializedObject.Update();
             }
         }
 
@@ -449,12 +499,12 @@ namespace UnityEditor.Rendering
         {
             // Create a rect with the width of the Toggle "ALL" and the height + vspacing of the property that is being overriden
             float height = EditorGUI.GetPropertyHeight(property.value) + EditorGUIUtility.standardVerticalSpacing;
-            var overrideRect = GUILayoutUtility.GetRect(k_AllText, CoreEditorStyles.miniLabelButton, GUILayout.Height(height), GUILayout.ExpandWidth(false));
+            var overrideRect = GUILayoutUtility.GetRect(Styles.allText, CoreEditorStyles.miniLabelButton, GUILayout.Height(height), GUILayout.ExpandWidth(false));
 
             // also center vertically the checkbox
             overrideRect.yMin += height * 0.5f - overrideToggleSize.y * 0.5f;
 
-            property.overrideState.boolValue = GUI.Toggle(overrideRect, property.overrideState.boolValue, k_OverrideSettingText, CoreEditorStyles.smallTickbox);
+            property.overrideState.boolValue = GUI.Toggle(overrideRect, property.overrideState.boolValue, Styles.overrideSettingText, CoreEditorStyles.smallTickbox);
         }
     }
 }
