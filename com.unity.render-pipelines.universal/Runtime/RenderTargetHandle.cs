@@ -10,7 +10,7 @@ namespace UnityEngine.Rendering.Universal
 
         public static readonly RenderTargetHandle CameraTarget = new RenderTargetHandle {id = -1 };
 
-        public RenderTargetHandle(RenderTargetIdentifier renderTargetIdentifier)
+        private RenderTargetHandle(RenderTargetIdentifier renderTargetIdentifier)
         {
             id = -2;
             rtid = renderTargetIdentifier;
@@ -24,11 +24,6 @@ namespace UnityEngine.Rendering.Universal
 #endif
 
             return CameraTarget;
-        }
-
-        public void Init(int id)
-        {
-            this.id = id;
         }
 
         public RenderTargetIdentifier Identifier()
