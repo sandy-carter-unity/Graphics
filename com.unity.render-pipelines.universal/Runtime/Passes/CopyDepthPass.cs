@@ -44,7 +44,13 @@ namespace UnityEngine.Rendering.Universal.Internal
         public void Setup(RTHandle source, CameraData cameraData)
         {
             this.source = source;
-            this.destinationId = RenderTargetHandle.GetCameraTarget(cameraData.xr).id;
+#if ENABLE_VR && ENABLE_XR_MODULE
+            if (cameraData.xr.enabled)
+                this.destinationId = -2;
+            else
+#endif
+
+                this.destinationId = -1;
             this.AllocateRT = false;
         }
 
@@ -58,7 +64,17 @@ namespace UnityEngine.Rendering.Universal.Internal
                 cmd.GetTemporaryRT(destinationId, descriptor, FilterMode.Point);
 
             // On Metal iOS, prevent camera attachments to be bound and cleared during this pass.
-            var identifier = destinationId != -2 ? destinationId : RenderTargetHandle.GetCameraTarget(renderingData.cameraData.xr).Identifier();
+            RenderTargetIdentifier identifier = destinationId;
+            if (identifier == -2)
+            {
+#if ENABLE_VR && ENABLE_XR_MODULE
+                if (renderingData.cameraData.xr.enabled)
+                    identifier = renderingData.cameraData.xr.renderTarget;
+                else
+#endif
+
+                    identifier = -1;
+            }
             ConfigureTarget(new RenderTargetIdentifier(identifier, 0, CubemapFace.Unknown, -1));
             ConfigureClear(ClearFlag.None, Color.black);
         }
@@ -163,7 +179,7 @@ namespace UnityEngine.Rendering.Universal.Internal
 
             if (this.AllocateRT)
                 cmd.ReleaseTemporaryRT(destinationId);
-            destinationId = RenderTargetHandle.CameraTarget.id;
+            destinationId = -1;  // RenderTargetHandle.CameraTarget.id;
         }
     }
 }
