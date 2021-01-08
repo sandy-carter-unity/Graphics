@@ -586,7 +586,7 @@ namespace UnityEngine.Rendering.Universal
             {
                 // Scene view camera should always resolve target (not stacked)
                 Assertions.Assert.IsTrue(lastCameraInTheStack, "Editor camera must resolve target upon finish rendering.");
-                m_SceneViewDepthCopyPass.Setup(new RenderTargetHandle(Shader.PropertyToID(m_DepthTexture.name)));
+                m_SceneViewDepthCopyPass.Setup(m_DepthTexture);
                 EnqueuePass(m_SceneViewDepthCopyPass);
             }
 #endif

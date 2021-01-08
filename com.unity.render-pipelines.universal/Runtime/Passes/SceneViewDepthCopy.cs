@@ -2,7 +2,7 @@ namespace UnityEngine.Rendering.Universal
 {
     internal class SceneViewDepthCopyPass : ScriptableRenderPass
     {
-        private RenderTargetHandle source { get; set; }
+        private RTHandle source { get; set; }
 
         Material m_CopyDepthMaterial;
         const string m_ProfilerTag = "Copy Depth for Scene View";
@@ -15,7 +15,7 @@ namespace UnityEngine.Rendering.Universal
             renderPassEvent = evt;
         }
 
-        public void Setup(RenderTargetHandle source)
+        public void Setup(RTHandle source)
         {
             this.source = source;
         }
@@ -35,7 +35,7 @@ namespace UnityEngine.Rendering.Universal
             using (new ProfilingScope(cmd, m_ProfilingSampler))
             {
                 CoreUtils.SetRenderTarget(cmd, BuiltinRenderTextureType.CameraTarget);
-                cmd.SetGlobalTexture("_CameraDepthAttachment", source.Identifier());
+                cmd.SetGlobalTexture("_CameraDepthAttachment", source);
                 cmd.EnableShaderKeyword(ShaderKeywordStrings.DepthNoMsaa);
                 cmd.DisableShaderKeyword(ShaderKeywordStrings.DepthMsaa2);
                 cmd.DisableShaderKeyword(ShaderKeywordStrings.DepthMsaa4);
