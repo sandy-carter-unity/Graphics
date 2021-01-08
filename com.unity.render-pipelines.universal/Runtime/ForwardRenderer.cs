@@ -410,7 +410,7 @@ namespace UnityEngine.Rendering.Universal
             {
                 if (renderPassInputs.requiresNormalsTexture)
                 {
-                    m_DepthNormalPrepass.Setup(cameraTargetDescriptor, new RenderTargetHandle(m_DepthTexture), new RenderTargetHandle(m_NormalsTexture));
+                    m_DepthNormalPrepass.Setup(cameraTargetDescriptor, URPShaderIDs._CameraDepthTexture, URPShaderIDs._CameraNormalsTexture);
                     EnqueuePass(m_DepthNormalPrepass);
                 }
                 else
