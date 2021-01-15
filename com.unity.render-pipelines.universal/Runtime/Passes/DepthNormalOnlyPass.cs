@@ -7,8 +7,8 @@ namespace UnityEngine.Rendering.Universal.Internal
         internal RenderTextureDescriptor normalDescriptor { get; private set; }
         internal RenderTextureDescriptor depthDescriptor { get; private set; }
 
-        private int depthId { get; set; }
-        private int normalId { get; set; }
+        private RTHandle depth { get; set; }
+        private RTHandle normal { get; set; }
         private ShaderTagId m_ShaderTagId = new ShaderTagId("DepthNormals");
         private FilteringSettings m_FilteringSettings;
 
@@ -28,15 +28,15 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// <summary>
         /// Configure the pass
         /// </summary>
-        public void Setup(RenderTextureDescriptor baseDescriptor, int depthId, int normalId)
+        public void Setup(RenderTextureDescriptor baseDescriptor, RTHandle depth, RTHandle normal)
         {
-            this.depthId = depthId;
+            this.depth = depth;
             baseDescriptor.colorFormat = RenderTextureFormat.Depth;
             baseDescriptor.depthBufferBits = k_DepthBufferBits;
             baseDescriptor.msaaSamples = 1;// Depth-Only pass don't use MSAA
             depthDescriptor = baseDescriptor;
 
-            this.normalId = normalId;
+            this.normal = normal;
             baseDescriptor.colorFormat = RenderTextureFormat.RGHalf;
             baseDescriptor.depthBufferBits = 0;
             baseDescriptor.msaaSamples = 1;
@@ -46,11 +46,11 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// <inheritdoc/>
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
-            cmd.GetTemporaryRT(normalId, normalDescriptor, FilterMode.Point);
-            cmd.GetTemporaryRT(depthId, depthDescriptor, FilterMode.Point);
+            cmd.GetTemporaryRT(Shader.PropertyToID(normal.name), normalDescriptor, FilterMode.Point);
+            cmd.GetTemporaryRT(Shader.PropertyToID(depth.name), depthDescriptor, FilterMode.Point);
             ConfigureTarget(
-                new RenderTargetIdentifier(normalId, 0, CubemapFace.Unknown, -1),
-                new RenderTargetIdentifier(depthId, 0, CubemapFace.Unknown, -1)
+                new RenderTargetIdentifier(normal.name, 0, CubemapFace.Unknown, -1),
+                new RenderTargetIdentifier(depth.name, 0, CubemapFace.Unknown, -1)
             );
             ConfigureClear(ClearFlag.All, Color.black);
         }
@@ -87,12 +87,12 @@ namespace UnityEngine.Rendering.Universal.Internal
                 throw new ArgumentNullException("cmd");
             }
 
-            if (depthId != -1 /*RenderTargetHandle.CameraTarget.id*/)
+            if (depth != null /*RenderTargetHandle.CameraTarget.id*/)
             {
-                cmd.ReleaseTemporaryRT(normalId);
-                cmd.ReleaseTemporaryRT(depthId);
-                normalId = -1;  // RenderTargetHandle.CameraTarget.id;
-                depthId = -1;  // RenderTargetHandle.CameraTarget.id;
+                cmd.ReleaseTemporaryRT(Shader.PropertyToID(normal.name));
+                cmd.ReleaseTemporaryRT(Shader.PropertyToID(depth.name));
+                normal = null;  // RenderTargetHandle.CameraTarget.id;
+                depth = null;  // RenderTargetHandle.CameraTarget.id;
             }
         }
     }

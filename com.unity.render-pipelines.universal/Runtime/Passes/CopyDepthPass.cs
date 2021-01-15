@@ -30,10 +30,10 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// </summary>
         /// <param name="source">Source Render Target</param>
         /// <param name="destination">Destination Render Target</param>
-        public void Setup(RTHandle source, int destinationId)
+        public void Setup(RTHandle source, RTHandle destination)
         {
             this.source = source;
-            this.destinationId = destinationId;
+            this.destinationId = Shader.PropertyToID(destination.name);
         }
 
         /// <summary>
