@@ -178,7 +178,7 @@ namespace UnityEngine.Experimental.Rendering.Universal
             // We generate color LUT in the base camera only. This allows us to not break render pass execution for overlay cameras.
             if (stackHasPostProcess && cameraData.renderType == CameraRenderType.Base && m_PostProcessPasses.isCreated)
             {
-                colorGradingLutPass.Setup(URPShaderIDs._InternalGradingLut);
+                colorGradingLutPass.Setup(colorGradingLutHandle);
                 EnqueuePass(colorGradingLutPass);
             }
 
@@ -193,38 +193,33 @@ namespace UnityEngine.Experimental.Rendering.Universal
             bool requireFinalPostProcessPass =
                 lastCameraInStack && !ppcUpscaleRT && stackHasPostProcess && cameraData.antialiasing == AntialiasingMode.FastApproximateAntialiasing;
 
-            var colorTargetRT = colorTargetHandle;
-            var depthTargetRT = depthTargetHandle;
-            var colorGradingLut = colorGradingLutHandle;
-
             if (stackHasPostProcess && m_PostProcessPasses.isCreated)
             {
                 bool destinationIsInternalRT = lastCameraInStack && !ppcUpscaleRT && !requireFinalPostProcessPass;
 
-                int postProcessDestId = destinationIsInternalRT ? -1 /*RenderTargetHandle.CameraTarget.id*/ : URPShaderIDs._AfterPostProcessTexture;
-
+                RTHandle postProcessDestHandle = destinationIsInternalRT ? RTHandles.Alloc(BuiltinRenderTextureType.CameraTarget) : afterPostProcessColorHandle;
 
                 postProcessPass.Setup(
                     cameraTargetDescriptor,
-                    colorTargetRT,
-                    postProcessDestId,
-                    depthTargetRT,
-                    colorGradingLut,
+                    colorTargetHandle,
+                    postProcessDestHandle,
+                    depthTargetHandle,
+                    colorGradingLutHandle,
                     requireFinalPostProcessPass,
                     destinationIsInternalRT);
 
                 EnqueuePass(postProcessPass);
-                colorTargetHandle = RTHandles.Alloc(postProcessDestId);
+                colorTargetHandle = postProcessDestHandle;
             }
 
             if (requireFinalPostProcessPass && m_PostProcessPasses.isCreated)
             {
-                finalPostProcessPass.SetupFinalPass(colorTargetRT);
+                finalPostProcessPass.SetupFinalPass(colorTargetHandle);
                 EnqueuePass(finalPostProcessPass);
             }
             else if (lastCameraInStack && colorTargetHandle != new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget))
             {
-                m_FinalBlitPass.Setup(cameraTargetDescriptor, colorTargetRT);
+                m_FinalBlitPass.Setup(cameraTargetDescriptor, colorTargetHandle);
                 EnqueuePass(m_FinalBlitPass);
             }
         }

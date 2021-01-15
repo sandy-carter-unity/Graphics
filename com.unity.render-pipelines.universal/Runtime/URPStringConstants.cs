@@ -402,12 +402,13 @@ namespace UnityEngine.Rendering.Universal
         public static readonly int _CameraDepthTexture = Shader.PropertyToID("_CameraDepthTexture");
         public static readonly int _CameraNormalsTexture = Shader.PropertyToID("_CameraNormalsTexture");
 
+        public static readonly int _GBufferDepthAsColor = Shader.PropertyToID("_GBufferDepthAsColor");
         public static readonly int[] _GBuffer =
         {
             Shader.PropertyToID("_GBuffer0"),
             Shader.PropertyToID("_GBuffer1"),
             Shader.PropertyToID("_GBuffer2"),
-            0,
+            Shader.PropertyToID("_GBuffer3"),
             Shader.PropertyToID("_GBuffer4"),
         };
 

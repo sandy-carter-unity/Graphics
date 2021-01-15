@@ -788,7 +788,7 @@ namespace UnityEngine.Rendering.Universal.Internal
 
         public override void Configure(CommandBuffer cmd, RenderTextureDescriptor cameraTextureDescriptor)
         {
-            m_AdditionalLightsShadowmap = RTHandles.Alloc(ShadowUtils.GetTemporaryShadowTexture(m_ShadowmapWidth, m_ShadowmapHeight, k_ShadowmapBufferBits));
+            m_AdditionalLightsShadowmap = RTHandles.Alloc(ShadowUtils.GetTemporaryShadowTexture(m_ShadowmapWidth, m_ShadowmapHeight, k_ShadowmapBufferBits), "_AdditionalLightsShadowmapTexture");
             ConfigureTarget(m_AdditionalLightsShadowmap);
             ConfigureClear(ClearFlag.All, Color.black);
         }
@@ -900,7 +900,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             float invHalfShadowAtlasWidth = 0.5f * invShadowAtlasWidth;
             float invHalfShadowAtlasHeight = 0.5f * invShadowAtlasHeight;
 
-            cmd.SetGlobalTexture(URPShaderIDs._AdditionalLightsShadowmapTexture, m_AdditionalLightsShadowmap);
+            cmd.SetGlobalTexture(m_AdditionalLightsShadowmap.name, m_AdditionalLightsShadowmap);
 
             // set shadow fade (shadow distance) parameters
             ShadowUtils.SetupShadowReceiverConstantBuffer(cmd, m_MainLightShadowParams);
