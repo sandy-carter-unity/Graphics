@@ -523,7 +523,7 @@ namespace UnityEngine.Rendering.Universal
                 // Post-processing will resolve to final target. No need for final blit pass.
                 if (applyPostProcessing)
                 {
-                    var destination = resolvePostProcessingToCameraTarget ? RTHandles.Alloc(BuiltinRenderTextureType.CameraTarget) /*RenderTargetHandle.CameraTarget.id*/ : afterPostProcessColor;
+                    var destination = resolvePostProcessingToCameraTarget ? RTHandles.Alloc(BuiltinRenderTextureType.CameraTarget) : afterPostProcessColor;
 
                     // if resolving to screen we need to be able to perform sRGBConvertion in post-processing if necessary
                     bool doSRGBConvertion = resolvePostProcessingToCameraTarget;
