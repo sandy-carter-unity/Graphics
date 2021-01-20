@@ -126,8 +126,34 @@ namespace UnityEngine.Rendering.Universal.Internal
             m_MRT2 = new RenderTargetIdentifier[2];
             m_ResetHistory = true;
 
-            m_TempTarget = RTHandles.Alloc("_TempTarget", "_TempTarget");
-            m_TempTarget2 = RTHandles.Alloc("_TempTarget2", "_TempTarget2");
+            m_TempTarget = RTHandles.Alloc(
+                Vector2.one,
+                depthBufferBits: DepthBits.None,
+                colorFormat: m_DefaultHDRFormat,
+                filterMode: FilterMode.Bilinear,
+                wrapMode: TextureWrapMode.Clamp,
+                dimension: TextureDimension.Tex2D,
+                enableRandomWrite: false,
+                useMipMap: false,
+                autoGenerateMips: false,
+                bindTextureMS: false,
+                useDynamicScale: false,
+                memoryless: RenderTextureMemoryless.None,
+                name: "_TempTarget");
+            m_TempTarget2 = RTHandles.Alloc(
+                Vector2.one,
+                depthBufferBits: DepthBits.None,
+                colorFormat: m_DefaultHDRFormat,
+                filterMode: FilterMode.Bilinear,
+                wrapMode: TextureWrapMode.Clamp,
+                dimension: TextureDimension.Tex2D,
+                enableRandomWrite: false,
+                useMipMap: false,
+                autoGenerateMips: false,
+                bindTextureMS: false,
+                useDynamicScale: false,
+                memoryless: RenderTextureMemoryless.None,
+                name: "_TempTarget2");
 
             Vector2 mipScale = Vector2.one;
             var mipCount = 16;
@@ -170,6 +196,8 @@ namespace UnityEngine.Rendering.Universal.Internal
         public void Cleanup()
         {
             m_Materials.Cleanup();
+            m_TempTarget.Release();
+            m_TempTarget2.Release();
             foreach (var handle in m_BloomMipDown)
             {
                 handle.Release();
@@ -372,14 +400,12 @@ namespace UnityEngine.Rendering.Universal.Internal
             {
                 if (destination.nameID == BuiltinRenderTextureType.CameraTarget)
                 {
-                    cmd.GetTemporaryRT(Shader.PropertyToID(m_TempTarget.name), GetCompatibleDescriptor(), FilterMode.Bilinear);
                     destination = m_TempTarget;
                     tempTargetUsed = true;
                 }
                 else if (destination == m_Source && m_Descriptor.msaaSamples > 1)
                 {
                     // Avoid using m_Source.id as new destination, it may come with a depth buffer that we don't want, may have MSAA that we don't want etc
-                    cmd.GetTemporaryRT(Shader.PropertyToID(m_TempTarget2.name), GetCompatibleDescriptor(), FilterMode.Bilinear);
                     destination = m_TempTarget2;
                     tempTarget2Used = true;
                 }
@@ -399,10 +425,7 @@ namespace UnityEngine.Rendering.Universal.Internal
             {
                 using (new ProfilingScope(cmd, ProfilingSampler.Get(URPProfileId.StopNaNs)))
                 {
-                    RenderingUtils.Blit(
-                        cmd, GetSource(), GetDestination(), m_Materials.stopNaN, 0, m_UseDrawProcedural,
-                        RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
-                        RenderBufferLoadAction.DontCare, RenderBufferStoreAction.DontCare);
+                    RenderingUtils.Blit(cmd, GetSource(), GetDestination(), m_Materials.stopNaN, 0, m_UseDrawProcedural);
 
                     Swap();
                 }
@@ -565,13 +588,6 @@ namespace UnityEngine.Rendering.Universal.Internal
 
                     cmd.SetViewProjectionMatrices(cameraData.camera.worldToCameraMatrix, cameraData.camera.projectionMatrix);
                 }
-
-                // Cleanup
-                if (tempTargetUsed)
-                    cmd.ReleaseTemporaryRT(Shader.PropertyToID(m_TempTarget.name));
-
-                if (tempTarget2Used)
-                    cmd.ReleaseTemporaryRT(Shader.PropertyToID(m_TempTarget2.name));
             }
         }
 
