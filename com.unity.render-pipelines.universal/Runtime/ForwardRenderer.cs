@@ -1,6 +1,6 @@
-using UnityEngine.Rendering.Universal.Internal;
-using UnityEngine.Experimental.Rendering;
 using System.Reflection;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering.Universal.Internal;
 
 namespace UnityEngine.Rendering.Universal
 {
@@ -194,8 +194,34 @@ namespace UnityEngine.Rendering.Universal
 
             // RenderTexture format depends on camera and pipeline (HDR, non HDR, etc)
             // Samples (MSAA) depend on camera and pipeline
-            m_CameraAttachments.color = RTHandles.Alloc(URPShaderIDs._CameraColorTexture, "_CameraColorTexture");
-            m_CameraAttachments.depth = RTHandles.Alloc(URPShaderIDs._CameraDepthAttachment, "_CameraDepthAttachment");
+            bool useDepthRenderBuffer = true;
+            m_CameraAttachments.color = RTHandles.Alloc(
+                Vector2.one,
+                depthBufferBits: useDepthRenderBuffer ? k_DepthStencilBufferBits : DepthBits.None,
+                colorFormat: GraphicsFormat.B10G11R11_UFloatPack32, // TODO there's a determine format we can use here
+                filterMode: FilterMode.Bilinear,
+                dimension: TextureDimension.Tex2D,
+                useMipMap: false,
+                autoGenerateMips: false,
+                enableMSAA: true,
+                name: "_CameraColorTexture");
+
+            bool bindMS = false;
+#if ENABLE_VR && ENABLE_XR_MODULE
+            bindMS = !SystemInfo.supportsMultisampleAutoResolve && SystemInfo.supportsMultisampledTextures != 0;
+#endif
+            m_CameraAttachments.depth = RTHandles.Alloc(
+                Vector2.one,
+                depthBufferBits: k_DepthStencilBufferBits,
+                colorFormat: GraphicsFormat.DepthAuto,
+                filterMode: FilterMode.Point,
+                dimension: TextureDimension.Tex2D,
+                useMipMap: false,
+                autoGenerateMips: false,
+                enableMSAA: true,
+                bindTextureMS: bindMS,
+                name: "_CameraDepthAttachment");
+
             m_DepthTexture = RTHandles.Alloc(URPShaderIDs._CameraDepthTexture, "_CameraDepthTexture");
             m_NormalsTexture = RTHandles.Alloc(URPShaderIDs._CameraNormalsTexture, "_CameraNormalsTexture");
             m_OpaqueColor = RTHandles.Alloc(URPShaderIDs._CameraOpaqueTexture, "_CameraOpaqueTexture");
@@ -647,9 +673,6 @@ namespace UnityEngine.Rendering.Universal
         /// <inheritdoc />
         public override void FinishRendering(CommandBuffer cmd)
         {
-            cmd.ReleaseTemporaryRT(Shader.PropertyToID(m_CameraAttachments.color.name));
-            cmd.ReleaseTemporaryRT(Shader.PropertyToID(m_CameraAttachments.depth.name));
-
             m_ActiveCameraAttachments.color = k_CameraTarget;
             m_ActiveCameraAttachments.depth = k_CameraTarget;
         }
@@ -736,27 +759,39 @@ namespace UnityEngine.Rendering.Universal
             CommandBuffer cmd = CommandBufferPool.Get();
             using (new ProfilingScope(cmd, Profiling.createCameraRenderTarget))
             {
-                if (createColor)
+                if (createColor && m_CameraAttachments.color.rt.graphicsFormat != descriptor.graphicsFormat)
                 {
-                    var colorDescriptor = descriptor;
-                    colorDescriptor.useMipMap = false;
-                    colorDescriptor.autoGenerateMips = false;
-                    colorDescriptor.depthBufferBits = (int) (useDepthRenderBuffer ? k_DepthStencilBufferBits : DepthBits.None);
-                    cmd.GetTemporaryRT(Shader.PropertyToID(m_CameraAttachments.color.name), colorDescriptor, FilterMode.Bilinear);
+                    m_CameraAttachments.color.Release();
+                    m_CameraAttachments.color = RTHandles.Alloc(Vector2.one,
+                        depthBufferBits: useDepthRenderBuffer ? k_DepthStencilBufferBits : DepthBits.None,
+                        colorFormat: descriptor.graphicsFormat,
+                        filterMode: FilterMode.Bilinear,
+                        dimension: TextureDimension.Tex2D,
+                        enableRandomWrite: false,
+                        useMipMap: false,
+                        autoGenerateMips: false,
+                        enableMSAA: true,
+                        name: "_CameraColorTexture");
                 }
 
-                if (createDepth)
-                {
-                    var depthDescriptor = descriptor;
-                    depthDescriptor.useMipMap = false;
-                    depthDescriptor.autoGenerateMips = false;
+                bool bindMS = false;
 #if ENABLE_VR && ENABLE_XR_MODULE
-                    // XRTODO: Enabled this line for non-XR pass? URP copy depth pass is already capable of handling MSAA.
-                    depthDescriptor.bindMS = depthDescriptor.msaaSamples > 1 && !SystemInfo.supportsMultisampleAutoResolve && (SystemInfo.supportsMultisampledTextures != 0);
+                bindMS = descriptor.msaaSamples > 1 && !SystemInfo.supportsMultisampleAutoResolve && SystemInfo.supportsMultisampledTextures != 0;
 #endif
-                    depthDescriptor.colorFormat = RenderTextureFormat.Depth;
-                    depthDescriptor.depthBufferBits = (int)k_DepthStencilBufferBits;
-                    cmd.GetTemporaryRT(Shader.PropertyToID(m_CameraAttachments.depth.name), depthDescriptor, FilterMode.Point);
+                if (createDepth && bindMS != m_CameraAttachments.depth.rt.bindTextureMS)
+                {
+                    m_CameraAttachments.depth.Release();
+                    m_CameraAttachments.depth = RTHandles.Alloc(
+                        Vector2.one,
+                        depthBufferBits: k_DepthStencilBufferBits,
+                        colorFormat: GraphicsFormat.DepthAuto,
+                        filterMode: FilterMode.Point,
+                        dimension: TextureDimension.Tex2D,
+                        useMipMap: false,
+                        autoGenerateMips: false,
+                        enableMSAA: true,
+                        bindTextureMS: bindMS,
+                        name: "_CameraDepthAttachment");
                 }
             }
 
