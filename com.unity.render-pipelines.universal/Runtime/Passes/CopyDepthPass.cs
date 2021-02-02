@@ -13,8 +13,10 @@ namespace UnityEngine.Rendering.Universal.Internal
     /// </summary>
     public class CopyDepthPass : ScriptableRenderPass
     {
+        static readonly RTHandle k_CameraTarget = RTHandles.Alloc(BuiltinRenderTextureType.CameraTarget);
+
         private RTHandle source { get; set; }
-        private int destinationId { get; set; }
+        private RTHandle destination { get; set; }
         internal bool AllocateRT  { get; set; }
         Material m_CopyDepthMaterial;
         public CopyDepthPass(RenderPassEvent evt, Material copyDepthMaterial)
@@ -33,7 +35,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         public void Setup(RTHandle source, RTHandle destination)
         {
             this.source = source;
-            this.destinationId = Shader.PropertyToID(destination.name);
+            this.destination = destination;
         }
 
         /// <summary>
@@ -44,13 +46,7 @@ namespace UnityEngine.Rendering.Universal.Internal
         public void Setup(RTHandle source, CameraData cameraData)
         {
             this.source = source;
-#if ENABLE_VR && ENABLE_XR_MODULE
-            if (cameraData.xr.enabled)
-                this.destinationId = -2;
-            else
-#endif
-
-                this.destinationId = -1;
+            this.destination = null;
             this.AllocateRT = false;
         }
 
@@ -61,21 +57,9 @@ namespace UnityEngine.Rendering.Universal.Internal
             descriptor.depthBufferBits = 32; //TODO: do we really need this. double check;
             descriptor.msaaSamples = 1;
             if (this.AllocateRT)
-                cmd.GetTemporaryRT(destinationId, descriptor, FilterMode.Point);
+                cmd.GetTemporaryRT(Shader.PropertyToID(destination.name), descriptor, FilterMode.Point);
 
-            // On Metal iOS, prevent camera attachments to be bound and cleared during this pass.
-            RenderTargetIdentifier identifier = destinationId;
-            if (identifier == -2)
-            {
-#if ENABLE_VR && ENABLE_XR_MODULE
-                if (renderingData.cameraData.xr.enabled)
-                    identifier = renderingData.cameraData.xr.renderTarget;
-                else
-#endif
-
-                    identifier = -1;
-            }
-            ConfigureTarget(new RenderTargetIdentifier(identifier, 0, CubemapFace.Unknown, -1));
+            ConfigureTarget(destination ?? k_CameraTarget);
             ConfigureClear(ClearFlag.None, Color.black);
         }
 
@@ -136,7 +120,7 @@ namespace UnityEngine.Rendering.Universal.Internal
                     // 1) we are bliting from render texture to back buffer and
                     // 2) renderTexture starts UV at top
                     // XRTODO: handle scalebias and scalebiasRt for src and dst separately
-                    bool isRenderToBackBufferTarget = destinationId == cameraData.xr.renderTarget && !cameraData.xr.renderTargetIsRenderTexture;
+                    bool isRenderToBackBufferTarget = destination == cameraData.xr.renderTarget && !cameraData.xr.renderTargetIsRenderTexture;
                     bool yflip = isRenderToBackBufferTarget && SystemInfo.graphicsUVStartsAtTop;
                     float flipSign = (yflip) ? -1.0f : 1.0f;
                     Vector4 scaleBiasRt = (flipSign < 0.0f)
@@ -178,8 +162,8 @@ namespace UnityEngine.Rendering.Universal.Internal
                 throw new ArgumentNullException("cmd");
 
             if (this.AllocateRT)
-                cmd.ReleaseTemporaryRT(destinationId);
-            destinationId = -1;  // RenderTargetHandle.CameraTarget.id;
+                cmd.ReleaseTemporaryRT(Shader.PropertyToID(destination.name));
+            destination = null;
         }
     }
 }

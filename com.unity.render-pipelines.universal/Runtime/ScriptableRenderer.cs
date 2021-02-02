@@ -240,7 +240,7 @@ namespace UnityEngine.Rendering.Universal
         /// It's only valid to call cameraColorTarget in the scope of <c>ScriptableRenderPass</c>.
         /// <seealso cref="ScriptableRenderPass"/>.
         /// </summary>
-        public RenderTargetIdentifier cameraColorTarget
+        public RTHandle cameraColorTarget
         {
             get
             {
@@ -337,32 +337,32 @@ namespace UnityEngine.Rendering.Universal
         // This should be removed when early camera color target assignment is removed.
         internal bool isCameraColorTargetValid = false;
 
-        static RenderTargetIdentifier[] m_ActiveColorAttachments = new RenderTargetIdentifier[] {0, 0, 0, 0, 0, 0, 0, 0 };
-        static RenderTargetIdentifier m_ActiveDepthAttachment;
+        static RTHandle[] m_ActiveColorAttachments = new RTHandle[] {null, null, null, null, null, null, null, null };
+        static RTHandle m_ActiveDepthAttachment;
 
         // CommandBuffer.SetRenderTarget(RenderTargetIdentifier[] colors, RenderTargetIdentifier depth, int mipLevel, CubemapFace cubemapFace, int depthSlice);
         // called from CoreUtils.SetRenderTarget will issue a warning assert from native c++ side if "colors" array contains some invalid RTIDs.
         // To avoid that warning assert we trim the RenderTargetIdentifier[] arrays we pass to CoreUtils.SetRenderTarget.
         // To avoid re-allocating a new array every time we do that, we re-use one of these arrays:
-        static RenderTargetIdentifier[][] m_TrimmedColorAttachmentCopies = new RenderTargetIdentifier[][]
+        static RTHandle[][] m_TrimmedColorAttachmentCopies = new RTHandle[][]
         {
-            new RenderTargetIdentifier[0],                          // m_TrimmedColorAttachmentCopies[0] is an array of 0 RenderTargetIdentifier - only used to make indexing code easier to read
-            new RenderTargetIdentifier[] {0},                        // m_TrimmedColorAttachmentCopies[1] is an array of 1 RenderTargetIdentifier
-            new RenderTargetIdentifier[] {0, 0},                     // m_TrimmedColorAttachmentCopies[2] is an array of 2 RenderTargetIdentifiers
-            new RenderTargetIdentifier[] {0, 0, 0},                  // m_TrimmedColorAttachmentCopies[3] is an array of 3 RenderTargetIdentifiers
-            new RenderTargetIdentifier[] {0, 0, 0, 0},               // m_TrimmedColorAttachmentCopies[4] is an array of 4 RenderTargetIdentifiers
-            new RenderTargetIdentifier[] {0, 0, 0, 0, 0},            // m_TrimmedColorAttachmentCopies[5] is an array of 5 RenderTargetIdentifiers
-            new RenderTargetIdentifier[] {0, 0, 0, 0, 0, 0},         // m_TrimmedColorAttachmentCopies[6] is an array of 6 RenderTargetIdentifiers
-            new RenderTargetIdentifier[] {0, 0, 0, 0, 0, 0, 0},      // m_TrimmedColorAttachmentCopies[7] is an array of 7 RenderTargetIdentifiers
-            new RenderTargetIdentifier[] {0, 0, 0, 0, 0, 0, 0, 0 },  // m_TrimmedColorAttachmentCopies[8] is an array of 8 RenderTargetIdentifiers
+            new RTHandle[0],  // m_TrimmedColorAttachmentCopies[0] is an array of 0 RTHandles - only used to make indexing code easier to read
+            new RTHandle[1],  // m_TrimmedColorAttachmentCopies[1] is an array of 1 RTHandles
+            new RTHandle[2],  // m_TrimmedColorAttachmentCopies[2] is an array of 2 RTHandles
+            new RTHandle[3],  // m_TrimmedColorAttachmentCopies[3] is an array of 3 RTHandles
+            new RTHandle[4],  // m_TrimmedColorAttachmentCopies[4] is an array of 4 RTHandles
+            new RTHandle[5],  // m_TrimmedColorAttachmentCopies[5] is an array of 5 RTHandles
+            new RTHandle[6],  // m_TrimmedColorAttachmentCopies[6] is an array of 6 RTHandles
+            new RTHandle[7],  // m_TrimmedColorAttachmentCopies[7] is an array of 7 RTHandles
+            new RTHandle[8],  // m_TrimmedColorAttachmentCopies[8] is an array of 8 RTHandles
         };
 
-        internal static void ConfigureActiveTarget(RenderTargetIdentifier colorAttachment,
-            RenderTargetIdentifier depthAttachment)
+        internal static void ConfigureActiveTarget(RTHandle colorAttachment,
+            RTHandle depthAttachment)
         {
             m_ActiveColorAttachments[0] = colorAttachment;
             for (int i = 1; i < m_ActiveColorAttachments.Length; ++i)
-                m_ActiveColorAttachments[i] = 0;
+                m_ActiveColorAttachments[i] = null;
 
             m_ActiveDepthAttachment = depthAttachment;
         }
@@ -680,7 +680,7 @@ namespace UnityEngine.Rendering.Universal
         {
             m_ActiveColorAttachments[0] = k_CameraTarget;
             for (int i = 1; i < m_ActiveColorAttachments.Length; ++i)
-                m_ActiveColorAttachments[i] = 0;
+                m_ActiveColorAttachments[i] = null;
 
             m_ActiveDepthAttachment = k_CameraTarget;
 
@@ -798,7 +798,7 @@ namespace UnityEngine.Rendering.Universal
                         int writeIndex = 0;
                         for (int readIndex = 0; readIndex < renderPass.colorAttachments.Length; ++readIndex)
                         {
-                            if (renderPass.colorAttachments[readIndex] != m_CameraColorTarget && renderPass.colorAttachments[readIndex] != 0)
+                            if (renderPass.colorAttachments[readIndex] != m_CameraColorTarget && renderPass.colorAttachments[readIndex] != null)
                             {
                                 nonCameraAttachments[writeIndex] = renderPass.colorAttachments[readIndex];
                                 ++writeIndex;
@@ -845,8 +845,8 @@ namespace UnityEngine.Rendering.Universal
             {
                 // Currently in non-MRT case, color attachment can actually be a depth attachment.
 
-                RenderTargetIdentifier passColorAttachment = renderPass.colorAttachment;
-                RenderTargetIdentifier passDepthAttachment = renderPass.depthAttachment;
+                RTHandle passColorAttachment = renderPass.colorAttachment;
+                RTHandle passDepthAttachment = renderPass.depthAttachment;
 
                 // When render pass doesn't call ConfigureTarget we assume it's expected to render to camera target
                 // which might be backbuffer or the framebuffer render textures.
@@ -942,11 +942,11 @@ namespace UnityEngine.Rendering.Universal
 #endif
         }
 
-        internal static void SetRenderTarget(CommandBuffer cmd, RenderTargetIdentifier colorAttachment, RenderTargetIdentifier depthAttachment, ClearFlag clearFlag, Color clearColor)
+        internal static void SetRenderTarget(CommandBuffer cmd, RTHandle colorAttachment, RTHandle depthAttachment, ClearFlag clearFlag, Color clearColor)
         {
             m_ActiveColorAttachments[0] = colorAttachment;
             for (int i = 1; i < m_ActiveColorAttachments.Length; ++i)
-                m_ActiveColorAttachments[i] = 0;
+                m_ActiveColorAttachments[i] = null;
 
             m_ActiveDepthAttachment = depthAttachment;
 
@@ -962,7 +962,7 @@ namespace UnityEngine.Rendering.Universal
 
         static void SetRenderTarget(
             CommandBuffer cmd,
-            RenderTargetIdentifier colorAttachment,
+            RTHandle colorAttachment,
             RenderBufferLoadAction colorLoadAction,
             RenderBufferStoreAction colorStoreAction,
             ClearFlag clearFlags,
@@ -973,10 +973,10 @@ namespace UnityEngine.Rendering.Universal
 
         static void SetRenderTarget(
             CommandBuffer cmd,
-            RenderTargetIdentifier colorAttachment,
+            RTHandle colorAttachment,
             RenderBufferLoadAction colorLoadAction,
             RenderBufferStoreAction colorStoreAction,
-            RenderTargetIdentifier depthAttachment,
+            RTHandle depthAttachment,
             RenderBufferLoadAction depthLoadAction,
             RenderBufferStoreAction depthStoreAction,
             ClearFlag clearFlags,
@@ -994,12 +994,18 @@ namespace UnityEngine.Rendering.Universal
             }
         }
 
-        static void SetRenderTarget(CommandBuffer cmd, RenderTargetIdentifier[] colorAttachments, RenderTargetIdentifier depthAttachment, ClearFlag clearFlag, Color clearColor)
+        static void SetRenderTarget(CommandBuffer cmd, RTHandle[] colorAttachments, RTHandle depthAttachment, ClearFlag clearFlag, Color clearColor)
         {
             m_ActiveColorAttachments = colorAttachments;
             m_ActiveDepthAttachment = depthAttachment;
 
-            CoreUtils.SetRenderTarget(cmd, colorAttachments, depthAttachment, clearFlag, clearColor);
+            RenderTargetIdentifier[] colorAttachmentIdentifiers = new RenderTargetIdentifier[colorAttachments.Length];
+            for (uint i = 0; i < colorAttachments.Length; ++i)
+            {
+                colorAttachmentIdentifiers[i] = colorAttachments[i];
+            }
+
+            CoreUtils.SetRenderTarget(cmd, colorAttachmentIdentifiers, depthAttachment, clearFlag, clearColor);
         }
 
         [Conditional("UNITY_EDITOR")]
