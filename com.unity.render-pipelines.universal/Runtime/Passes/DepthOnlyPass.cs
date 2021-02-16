@@ -11,8 +11,9 @@ namespace UnityEngine.Rendering.Universal.Internal
     public class DepthOnlyPass : ScriptableRenderPass
     {
         private static readonly ShaderTagId k_ShaderTagId = new ShaderTagId("DepthOnly");
+        static readonly RTHandle k_CameraTarget = RTHandles.Alloc(BuiltinRenderTextureType.CameraTarget);
 
-        private int depthAttachmentId { get; set; }
+        private RTHandle depthAttachment { get; set; }
         internal RenderTextureDescriptor descriptor { get; set; }
         internal bool allocateDepth { get; set; } = true;
         internal ShaderTagId shaderTagId { get; set; } = k_ShaderTagId;
@@ -35,11 +36,9 @@ namespace UnityEngine.Rendering.Universal.Internal
         /// <summary>
         /// Configure the pass
         /// </summary>
-        public void Setup(
-            RenderTextureDescriptor baseDescriptor,
-            RTHandle depthAttachment)
+        public void Setup(RenderTextureDescriptor baseDescriptor, RTHandle depthAttachment)
         {
-            this.depthAttachmentId = Shader.PropertyToID(depthAttachment.name);
+            this.depthAttachment = depthAttachment;
             baseDescriptor.colorFormat = RenderTextureFormat.Depth;
             baseDescriptor.depthBufferBits = k_DepthBufferBits;
 
@@ -54,8 +53,8 @@ namespace UnityEngine.Rendering.Universal.Internal
         public override void OnCameraSetup(CommandBuffer cmd, ref RenderingData renderingData)
         {
             if (this.allocateDepth)
-                cmd.GetTemporaryRT(depthAttachmentId, descriptor, FilterMode.Point);
-            ConfigureTarget(new RenderTargetIdentifier(depthAttachmentId, 0, CubemapFace.Unknown, -1));
+                cmd.GetTemporaryRT(Shader.PropertyToID(depthAttachment.name), descriptor, FilterMode.Point);
+            ConfigureTarget(depthAttachment ?? k_CameraTarget);
             ConfigureClear(ClearFlag.All, Color.black);
         }
 
@@ -86,11 +85,11 @@ namespace UnityEngine.Rendering.Universal.Internal
             if (cmd == null)
                 throw new ArgumentNullException("cmd");
 
-            if (depthAttachmentId != -1 /*RenderTargetHandle.CameraTarget.id*/)
+            if (depthAttachment != null)
             {
                 if (this.allocateDepth)
-                    cmd.ReleaseTemporaryRT(depthAttachmentId);
-                depthAttachmentId = -1;
+                    cmd.ReleaseTemporaryRT(Shader.PropertyToID(depthAttachment.name));
+                depthAttachment = null;
             }
         }
     }
